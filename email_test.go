@@ -558,6 +558,41 @@ d-printable decoding.</div>
 	}
 }
 
+func TestDisplayNameQuotation(t *testing.T) {
+	ex := &Email{
+		From:    "Test <test@example.com>",
+		To:      []string{"\"Test :)\" <test2@example.com>"},
+		Subject: "Test 1.2.3",
+		Text:    []byte("Test"),
+	}
+
+	b, err := ex.Bytes()
+	if err != nil {
+		t.Fatalf("Error calling Email.Bytes: %s", err.Error())
+	}
+
+	r := bytes.NewReader(b)
+	m, err := mail.ReadMessage(r)
+	if err != nil {
+		t.Fatalf("Error reading message: %s", err.Error())
+	}
+
+	from := m.Header.Get("From")
+	if from != ex.From {
+		t.Fatalf("Incorrect \"From\": %#q != %#q", from, ex.From)
+	}
+
+	to := m.Header.Get("To")
+	if to != ex.To[0] {
+		t.Fatalf("Incorrect \"To\": %#q != %#q", to, ex.To[0])
+	}
+
+	subj := m.Header.Get("Subject")
+	if subj != ex.Subject {
+		t.Fatalf("Incorrect \"Subject\": %#q != %#q", subj, ex.Subject)
+	}
+}
+
 func TestAttachmentEmailFromReader(t *testing.T) {
 	ex := &Email{
 		Subject: "Test Subject",

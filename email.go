@@ -737,6 +737,13 @@ func base64Wrap(w io.Writer, b []byte) {
 // headerToBytes renders "header" to "buff". If there are multiple values for a
 // field, multiple "Field: value\r\n" lines will be emitted.
 func headerToBytes(buff io.Writer, header textproto.MIMEHeader) {
+	quoteValue := func(name string) string {
+		if strings.ContainsAny(name, "()<>[]:;@\\,.") {
+			return "\"" + name + "\""
+		}
+		return name
+	}
+
 	for field, vals := range header {
 		for _, subval := range vals {
 			// bytes.Buffer.Write() never returns an error.
@@ -754,7 +761,8 @@ func headerToBytes(buff io.Writer, header textproto.MIMEHeader) {
 						continue
 					}
 					if addr.Name != "" {
-						participants[i] = fmt.Sprintf("%s <%s>", mime.QEncoding.Encode("UTF-8", addr.Name), addr.Address)
+						name := quoteValue(mime.QEncoding.Encode("UTF-8", addr.Name))
+						participants[i] = fmt.Sprintf("%s <%s>", name, addr.Address)
 					}
 				}
 				buff.Write([]byte(strings.Join(participants, ", ")))
